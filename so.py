@@ -89,12 +89,13 @@ class Cpu():
 #Guarda la ultima instruccion que se ejecuta (que no sea exit)
         self._ir = Instr(1)
 
-    #Se elimina el while y se redefine de forma recursiva (not the best practice)
+    #tickea a mano
     def start(self):
         op = self._memory.fetch(self._pc)
         if not op.isExit():
             ir = op
             self._tick(op)
+
 
     @property
     def pc(self):
@@ -104,6 +105,7 @@ class Cpu():
     def pc(self, addr):
         self._pc = addr
 
+    
     def _tick(self, op):
         print("Exec: {op}, PC={pc}".format(op=op, pc=self._pc))
         sleep(1)
@@ -135,14 +137,9 @@ class SO():
         self._cpu = Cpu(self._memory)
         self._cpus= []
 
-    def load(self, prog):
+    #Tiene que Hacer el load del programa
+    def exec(self, prog):
         self._memory.load(prog)
-
-
-    def exec(self, pc):
-        print(self)
-        self._cpu.pc = pc
-        self._cpu.start()
 
     def __repr__(self):
         return "{cpu}\n{mem}".format(cpu=self._cpu, mem=self._memory)
