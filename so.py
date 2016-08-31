@@ -95,7 +95,6 @@ class Cpu():
         if not op.isExit():
             ir = op
             self._tick(op)
-            self.start()
 
     @property
     def pc(self):
@@ -120,7 +119,7 @@ class Memory():
         self._memory = []
 
     def load(self, program):
-        self._memory = program.instructions
+        self._memory.extend(program.instructions)
 
     def fetch(self, addr):
         return self._memory[addr]
@@ -136,17 +135,14 @@ class SO():
         self._cpu = Cpu(self._memory)
         self._cpus= []
 
-    #Ejecuta una lista de programas, uno detras de otro
-    def execAll(self, programs):
-        for prog in programs:
-            self.exec(prog)
-
-    def exec(self, prog):
+    def load(self, prog):
         self._memory.load(prog)
+
+
+    def exec(self, pc):
         print(self)
-        self._cpu.pc = 0
+        self._cpu.pc = pc
         self._cpu.start()
-        print(self._cpu._ir)
 
     def __repr__(self):
         return "{cpu}\n{mem}".format(cpu=self._cpu, mem=self._memory)
@@ -155,7 +151,8 @@ class SO():
 if __name__ == '__main__':
     p = Program("test.exe", [CPU(5), IO(2), CPU(3)])
     p1 = Program("test.exe", [IO(2), CPU(3)])
-    p2 = Program("test.exe", [CPU(5), IO(2)])
-    progs = [p, p1, p2]
+
     so = SO()
-    so.execAll(progs)
+    so.load(p)
+    so.load(p1)
+    so.exec(4)
