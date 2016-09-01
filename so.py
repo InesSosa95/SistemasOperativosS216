@@ -2,6 +2,7 @@
 
 from tabulate import tabulate
 from time import sleep
+import unittest
 
 
 class Instr():
@@ -86,15 +87,13 @@ class Cpu():
     def __init__(self, mem):
         self._memory = mem
         self._pc = 0
-#Guarda la ultima instruccion que se ejecuta (que no sea exit)
+        #Guarda la ultima instruccion que se ejecuta (que no sea exit)
         self._ir = Instr(1)
 
     #tickea a mano
     def start(self):
         op = self._memory.fetch(self._pc)
-        if not op.isExit():
-            ir = op
-            self._tick(op)
+        self._tick(op)
 
 
     @property
@@ -109,6 +108,8 @@ class Cpu():
     def _tick(self, op):
         print("Exec: {op}, PC={pc}".format(op=op, pc=self._pc))
         sleep(1)
+        if not op.isExit():
+            self._ir = op
         self._pc += 1
 
     def __repr__(self):
@@ -135,7 +136,6 @@ class SO():
     def __init__(self):
         self._memory = Memory()
         self._cpu = Cpu(self._memory)
-        self._cpus= []
 
     #Tiene que Hacer el load del programa
     def exec(self, prog):
@@ -145,11 +145,58 @@ class SO():
         return "{cpu}\n{mem}".format(cpu=self._cpu, mem=self._memory)
 
 
-if __name__ == '__main__':
-    p = Program("test.exe", [CPU(5), IO(2), CPU(3)])
-    p1 = Program("test.exe", [IO(2), CPU(3)])
+class TestStringMethods(unittest.TestCase):
 
-    so = SO()
-    so.load(p)
-    so.load(p1)
-    so.exec(4)
+    def setUp(self):
+        self.prog1 = Program("test.exe", [CPU(5), IO(2), CPU(3)])
+        self.prog2 = Program("test.exe", [IO(2), CPU(3)])
+        self.so = SO()
+
+    def tearDown(self):
+        self.so = SO()
+
+    def test_cargar_un_programa(self):
+        self.so.exec(self.prog1)
+        self.assertTrue(len(self.so._memory._memory) == len(self.prog1.instructions))
+
+    def test_cargar_dos_programas(self):
+        self.so.exec(self.prog1)
+        self.so.exec(self.prog2)
+        expected = len(self.prog1.instructions) + len(self.prog2.instructions)
+        self.assertEqual(len(self.so._memory._memory), expected)
+
+    def test_ejecutar_primera_instruccion(self):
+        self.so.exec(self.prog1)
+
+        self.so._cpu.start
+
+        expectedPC = 1
+        expectedValorDeIR = "CPU"
+
+        self.so._cpu.start()
+
+        self.assertEqual(self.so._cpu.pc, expectedPC)
+        self.assertEqual(repr(self.so._cpu._ir), "CPU")
+
+    def test_al_ejecutar_un_exit_no_lo_guarda_en_ir(self):
+        self.so.exec(self.prog1)
+        self.so.exec(self.prog2)
+
+        self.so._cpu.pc = 9
+        self.so._cpu.start()
+
+        expectedPC = 10
+        expectedValorDeIR = "CPU"
+
+        self.assertEqual(self.so._cpu.pc, expectedPC)
+        self.assertEqual(repr(self.so._cpu._ir), "CPU")
+
+        self.so._cpu.start()
+
+        expectedPC = 11
+
+        self.assertEqual (self.so._cpu.pc, expectedPC)
+        self.assertEqual (repr(self.so._cpu._ir), "CPU")
+
+if __name__ == '__main__':
+    unittest.main()
